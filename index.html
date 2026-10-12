@@ -56,7 +56,7 @@ let cart=get('cart',{}),favs=get('favs',[]),profile=get('profile',{nick:'',color
 function toast(s){$('toast').textContent=s;$('toast').style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').style.display='none',2400)}
 function change(id,d){cart[id]=Math.max(0,Math.min(99,q(id)+d));if(!cart[id])delete cart[id];put('cart',cart);render()}
 function heart(id){favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];put('favs',favs);render();toast(favs.includes(id)?'Добавлено в любимые ❤️':'Удалено из любимых')}
-function card(p){return `<article class="card"><button class="heart ${favs.includes(p.id)?'on':''}" data-heart="${p.id}">${favs.includes(p.id)?'♥':'♡'}</button><div class="art">${p.emoji}</div><h3>${p.name}</h3><div class="desc">${p.desc}</div><div class="buy"><span class="price">${money(p.price)}</span>${q(p.id)?`<div class="qty"><button data-minus="${p.id}">−</button><b>${q(p.id)}</b><button data-plus="${p.id}">+</button></div>`:`<button class="add" data-plus="${p.id}">+</button>`}</div></article>`}
+function card(p){return `<article class="card" data-card="${p.id}"><button class="heart ${favs.includes(p.id)?'on':''}" data-heart="${p.id}">${favs.includes(p.id)?'♥':'♡'}</button><div class="art">${p.emoji}</div><h3>${p.name}</h3><div class="desc">${p.desc}</div><div class="buy"><span class="price">${money(p.price)}</span>${q(p.id)?`<div class="qty"><button data-minus="${p.id}">−</button><b>${q(p.id)}</b><button data-plus="${p.id}">+</button></div>`:`<button class="add" data-plus="${p.id}">+</button>`}</div></article>`}
 function shop(){$('grid').innerHTML=P.filter(p=>cat==='all'||p.cat===cat).map(card).join('');$('menuCount').textContent=P.filter(p=>cat==='all'||p.cat===cat).length+' позиций'}
 function favoriteView(){let a=P.filter(p=>favs.includes(p.id));$('favCount').textContent=a.length+' блюд';$('fstats').textContent=a.length;$('favlist').innerHTML=a.length?a.map(p=>`<div class="favrow"><span class="emoji">${p.emoji}</span><div class="meta"><b>${p.name}</b><br><span class="price">${money(p.price)}</span></div><button data-heart="${p.id}">♥</button><button class="add" data-plus="${p.id}">+</button></div>`).join(''):'<div class="empty">Пока пусто 💔<br>Нажми сердечко у любимого блюда.</div>'}
 function cartView(){let a=P.filter(p=>q(p.id));$('cartCount').textContent=count()+' товаров';$('navCount').textContent=count()?'('+count()+')':'';$('cartItems').innerHTML=a.length?a.map(p=>`<div class="item"><div>${p.emoji} <b>${p.name}</b><br><small class="hint">${money(p.price)} за шт.</small></div><div class="qty"><button data-minus="${p.id}">−</button><b>${q(p.id)}</b><button data-plus="${p.id}">+</button></div><b>${money(p.price*q(p.id))}</b></div>`).join(''):'<div class="empty">Корзина пока пустая</div>';$('cartTotal').textContent=money(sum())}
@@ -72,14 +72,23 @@ render()})();
 </script>
 <script>
 document.addEventListener('click', function(e) {
-  const card = e.target.closest('.card');
-  if (!card) return;
-  card.classList.remove('bb-glow');
-  void card.offsetWidth;
-  card.classList.add('bb-glow');
-  clearTimeout(card._bbGlowTimer);
-  card._bbGlowTimer = setTimeout(() => card.classList.remove('bb-glow'), 1100);
-});
+  const oldCard = e.target.closest('.card');
+  const id = oldCard?.dataset.card ||
+    e.target.closest('[data-plus], [data-minus], [data-heart]')?.dataset.plus ||
+    e.target.closest('[data-minus]')?.dataset.minus ||
+    e.target.closest('[data-heart]')?.dataset.heart;
+  if (!id) return;
+  setTimeout(() => {
+    const card = [...document.querySelectorAll('.card[data-card]')]
+      .find(el => el.dataset.card === id);
+    if (!card) return;
+    card.classList.remove('bb-glow');
+    void card.offsetWidth;
+    card.classList.add('bb-glow');
+    clearTimeout(card._bbGlowTimer);
+    card._bbGlowTimer = setTimeout(() => card.classList.remove('bb-glow'), 1400);
+  }, 0);
+}, true);
 </script>
 
 </body></html>
